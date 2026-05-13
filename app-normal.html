@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Novedades</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f0f2f5; --surface:#fff; --border:#dde1e9;
+    --accent:#2563eb; --accent-h:#1d4ed8;
+    --text:#111827; --muted:#6b7280;
+    --danger:#ef4444; --success:#16a34a;
+    --tag-bg:#eff6ff; --tag-text:#1d4ed8;
+    --radius:10px; --shadow:0 2px 12px rgba(0,0,0,0.07);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+  .logo{font-size:15px;font-weight:600}.logo span{color:var(--accent)}
+  .badge{font-size:11px;font-weight:600;background:var(--tag-bg);color:var(--tag-text);padding:3px 10px;border-radius:20px;text-transform:uppercase}
+  .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px}
+  .tab{padding:14px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none}
+  .tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{max-width:680px;margin:0 auto;padding:28px 16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+  .card h2{font-size:16px;font-weight:600;margin-bottom:22px}
+  .form-row{margin-bottom:18px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+  .input-wrap{position:relative}
+  input[type="text"],textarea{width:100%;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:var(--radius);background:#fafbfc;color:var(--text);outline:none;transition:border .2s,box-shadow .2s}
+  input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff}
+  textarea{resize:vertical;min-height:100px;line-height:1.6}
+  .autocomplete-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:200px;overflow-y:auto;z-index:200;display:none}
+  .autocomplete-list.open{display:block}
+  .autocomplete-item{padding:10px 14px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}
+  .autocomplete-item:hover,.autocomplete-item.highlighted{background:var(--tag-bg)}
+  .sub{font-size:11px;color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;border:none;border-radius:var(--radius);cursor:pointer;transition:background .2s}
+  .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-h)}
+  .btn-primary:disabled{background:#93c5fd;cursor:not-allowed}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.success{background:var(--success)}#toast.error{background:var(--danger)}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  td{padding:11px 12px;border-bottom:1px solid #f1f3f6;vertical-align:top}
+  tr:last-child td{border-bottom:none}tr:hover td{background:#fafbff}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--tag-bg);color:var(--tag-text)}
+  .empty-state{text-align:center;padding:48px 0;color:var(--muted);font-size:14px}
+  .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .filters input{flex:1;min-width:160px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:var(--radius);outline:none;background:#fafbfc}
+  .filters input:focus{border-color:var(--accent);background:#fff}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .section-hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Novedades <span>Escolares</span></div>
+  <div class="badge">Usuario</div>
+</header>
+<div class="tabs">
+  <div class="tab active" data-tab="registro">✏️ Registrar novedad</div>
+  <div class="tab" data-tab="consulta">🔍 Consultar novedades</div>
+</div>
+<main>
+  <div id="tab-registro">
+    <div class="card">
+      <h2>Nueva novedad</h2>
+      <div class="form-row"><label>Curso</label>
+        <div class="input-wrap">
+          <input type="text" id="inp-curso" placeholder="Escribí para buscar…" autocomplete="off">
+          <div class="autocomplete-list" id="list-curso"></div>
+        </div>
+      </div>
+      <div class="form-row"><label>Alumno</label>
+        <div class="input-wrap">
+          <input type="text" id="inp-alumno" placeholder="Escribí para buscar…" autocomplete="off">
+          <div class="autocomplete-list" id="list-alumno"></div>
+        </div>
+      </div>
+      <div class="form-row"><label>Novedad</label>
+        <textarea id="inp-novedad" placeholder="Describí la novedad…"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btn-guardar" onclick="guardar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+        Guardar novedad
+      </button>
+    </div>
+  </div>
+  <div id="tab-consulta" class="section-hidden">
+    <div class="card">
+      <h2>Novedades registradas</h2>
+      <div class="filters">
+        <input type="text" id="fil-alumno" placeholder="Filtrar por alumno…" oninput="filtrarTabla()">
+        <input type="text" id="fil-curso" placeholder="Filtrar por curso…" oninput="filtrarTabla()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha y hora</th><th>Curso</th><th>Alumno</th><th>Novedad</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+<script>
+// ── REEMPLAZÁ con tu URL de Apps Script ──
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxz8tgpTWxABoCkrHk4-5E8KVwisWxlZBA99SKvetdjsdzca0jVr4ZxhE8T7Ju5U8j4/exec";
+
+let todosAlumnos = [];
+let novedadesData = [];
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    document.getElementById('tab-registro').classList.toggle('section-hidden', id !== 'registro');
+    document.getElementById('tab-consulta').classList.toggle('section-hidden', id !== 'consulta');
+    if (id === 'consulta') cargarNovedades();
+  });
+});
+
+// ── CARGA ALUMNOS ──
+async function cargarAlumnos() {
+  try {
+    const res = await fetch(SCRIPT_URL + '?accion=getAlumnos');
+    const json = await res.json();
+    if (json.ok) todosAlumnos = json.data;
+  } catch(e) {
+    toast("No se pudo cargar la base de datos", "error");
+  }
+}
+cargarAlumnos();
+
+// ── AUTOCOMPLETE ──
+function setupAC(inputId, listId, getItems, onSelect) {
+  const inp = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  let idx = -1;
+  inp.addEventListener('input', () => {
+    const q = inp.value.trim().toLowerCase();
+    list.innerHTML = ''; idx = -1;
+    if (!q) { list.classList.remove('open'); return; }
+    const matches = getItems(q).slice(0, 8);
+    if (!matches.length) { list.classList.remove('open'); return; }
+    matches.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.innerHTML = item.html;
+      div.addEventListener('mousedown', e => { e.preventDefault(); onSelect(item); list.classList.remove('open'); });
+      list.appendChild(div);
+    });
+    list.classList.add('open');
+  });
+  inp.addEventListener('keydown', e => {
+    const items = list.querySelectorAll('.autocomplete-item');
+    if (e.key==='ArrowDown'){idx=Math.min(idx+1,items.length-1);hl(items,idx);e.preventDefault();}
+    if (e.key==='ArrowUp'){idx=Math.max(idx-1,0);hl(items,idx);e.preventDefault();}
+    if (e.key==='Enter'&&idx>=0) items[idx].dispatchEvent(new Event('mousedown'));
+    if (e.key==='Escape') list.classList.remove('open');
+  });
+  document.addEventListener('click', e => { if (!inp.contains(e.target)) list.classList.remove('open'); });
+}
+function hl(items, i) { items.forEach((el,j) => el.classList.toggle('highlighted', j===i)); }
+
+setupAC('inp-curso','list-curso',
+  q => [...new Set(todosAlumnos.map(a=>a.curso))].filter(c=>c.toLowerCase().includes(q)).map(c=>({html:'<strong>'+c+'</strong>',value:c})),
+  item => { document.getElementById('inp-curso').value = item.value; }
+);
+setupAC('inp-alumno','list-alumno',
+  q => {
+    const cs = document.getElementById('inp-curso').value.trim().toLowerCase();
+    return (cs ? todosAlumnos.filter(a=>a.curso.toLowerCase()===cs) : todosAlumnos)
+      .filter(a=>a.alumno.toLowerCase().includes(q))
+      .map(a=>({html:a.alumno+' <span class="sub">'+a.curso+'</span>',value:a.alumno,curso:a.curso}));
+  },
+  item => {
+    document.getElementById('inp-alumno').value = item.value;
+    if (item.curso && !document.getElementById('inp-curso').value.trim())
+      document.getElementById('inp-curso').value = item.curso;
+  }
+);
+
+// ── GUARDAR ──
+async function guardar() {
+  const curso   = document.getElementById('inp-curso').value.trim();
+  const alumno  = document.getElementById('inp-alumno').value.trim();
+  const novedad = document.getElementById('inp-novedad').value.trim();
+  if (!curso)   return toast("Completá el campo Curso","error");
+  if (!alumno)  return toast("Completá el campo Alumno","error");
+  if (!novedad) return toast("Escribí la novedad","error");
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando…';
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ accion:'registrarNormal', curso, alumno, novedadNormal: novedad })
+    });
+    const json = await res.json();
+    if (json.ok) {
+      toast("Novedad guardada correctamente","success");
+      document.getElementById('inp-curso').value='';
+      document.getElementById('inp-alumno').value='';
+      document.getElementById('inp-novedad').value='';
+    } else toast("Error al guardar","error");
+  } catch(e) { toast("Error de conexión","error"); }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg> Guardar novedad';
+}
+
+// ── NOVEDADES ──
+async function cargarNovedades() {
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="4"><div class="empty-state">Cargando…</div></td></tr>';
+  try {
+    const res = await fetch(SCRIPT_URL + '?accion=getNovedadesNormales');
+    const json = await res.json();
+    if (json.ok) { novedadesData = json.data.reverse(); renderTabla(novedadesData); }
+  } catch(e) {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="4"><div class="empty-state">Error al cargar</div></td></tr>';
+  }
+}
+function renderTabla(datos) {
+  const tbody = document.getElementById('tbody');
+  if (!datos.length) { tbody.innerHTML='<tr><td colspan="4"><div class="empty-state">No hay novedades</div></td></tr>'; return; }
+  tbody.innerHTML = datos.map(r=>`<tr><td><span style="font-family:'DM Mono',monospace;font-size:12px">${r.fechaHora}</span></td><td><span class="pill">${r.curso}</span></td><td>${r.alumno}</td><td style="white-space:pre-wrap;max-width:260px">${r.novedadNormal}</td></tr>`).join('');
+}
+function filtrarTabla() {
+  const fa=document.getElementById('fil-alumno').value.toLowerCase();
+  const fc=document.getElementById('fil-curso').value.toLowerCase();
+  renderTabla(novedadesData.filter(r=>r.alumno.toLowerCase().includes(fa)&&r.curso.toLowerCase().includes(fc)));
+}
+
+// ── TOAST ──
+function toast(msg,tipo){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=tipo||'';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>
