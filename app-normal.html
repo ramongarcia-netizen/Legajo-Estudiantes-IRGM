@@ -121,9 +121,10 @@ let cursos = [], alumnos = [], docentes = [], novedadesData = [];
 let cbCount = 0;
 
 // ── JSONP ──
+let cbCount = 0;
 function apiCall(params) {
   return new Promise((resolve, reject) => {
-    const cbName = 'cb' + Date.now();
+    const cbName = 'cb' + (++cbCount);
     const timeout = setTimeout(() => {
       delete window[cbName];
       reject(new Error('Timeout'));
@@ -135,7 +136,7 @@ function apiCall(params) {
     };
     const p = new URLSearchParams();
     for (const k in params) p.append(k, params[k]);
-    p.append('callback', cbName);
+    p.append('cb', cbName);
     const script = document.createElement('script');
     script.src = SCRIPT_URL + '?' + p.toString();
     script.onerror = () => {
@@ -146,7 +147,6 @@ function apiCall(params) {
     document.head.appendChild(script);
   });
 }
-
 // ── TABS ──
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
