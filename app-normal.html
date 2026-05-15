@@ -100,9 +100,9 @@
     <div class="card">
       <h2>Novedades registradas</h2>
       <div class="filters">
-        <input type="text" id="fil-alumno" placeholder="Filtrar por alumno…" oninput="filtrarTabla()">
-        <input type="text" id="fil-curso"  placeholder="Filtrar por curso…"  oninput="filtrarTabla()">
-        <input type="text" id="fil-docente" placeholder="Filtrar por docente…" oninput="filtrarTabla()">
+        <input type="text" id="fil-alumno"  placeholder="Alumno…"  oninput="filtrarTabla()">
+        <input type="text" id="fil-curso"   placeholder="Curso…"   oninput="filtrarTabla()">
+        <input type="text" id="fil-docente" placeholder="Docente…" oninput="filtrarTabla()">
       </div>
       <div class="table-wrap">
         <table>
@@ -115,10 +115,34 @@
 </main>
 <div id="toast"></div>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySGlruWI8QCgx7-z8UkC6JuHMpoBbyGRyG0G46Wb0uwyszWGf5Dz8dxnqTj9-MZOqtpQ/exec?accion=getAlumnos";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXJ6tjT9S2bcmmunkWqU2dPsNTH9f_RWgIKZittMOt2upLIkr7FBtzRqC_t0MyAfImUg/exec";
 
 let cursos = [], alumnos = [], docentes = [], novedadesData = [];
+let cbCount = 0;
 
+// ── JSONP ──
+function apiCall(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = '__cb' + (++cbCount);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      reject(new Error('Timeout'));
+    }, 10000);
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      resolve(data);
+    };
+    const url = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: cbName}).toString();
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error('Error de red')); };
+    document.head.appendChild(script);
+    setTimeout(() => { if (script.parentNode) script.parentNode.removeChild(script); }, 11000);
+  });
+}
+
+// ── TABS ──
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -130,18 +154,13 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-async function apiGet(params) {
-  const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
-  const res = await fetch(url, { redirect: 'follow' });
-  return res.json();
-}
-
+// ── CARGA INICIAL ──
 async function cargarDatos() {
   try {
     const [rC, rA, rD] = await Promise.all([
-      apiGet({ accion: 'getCursos' }),
-      apiGet({ accion: 'getAlumnos' }),
-      apiGet({ accion: 'getDocentes' })
+      apiCall({ accion: 'getCursos' }),
+      apiCall({ accion: 'getAlumnos' }),
+      apiCall({ accion: 'getDocentes' })
     ]);
     if (rC.ok) cursos   = rC.data;
     if (rA.ok) alumnos  = rA.data;
@@ -152,6 +171,7 @@ async function cargarDatos() {
 }
 cargarDatos();
 
+// ── AUTOCOMPLETE ──
 function setupAC(inputId, listId, getItems) {
   const inp = document.getElementById(inputId);
   const list = document.getElementById(listId);
@@ -166,11 +186,7 @@ function setupAC(inputId, listId, getItems) {
       const div = document.createElement('div');
       div.className = 'autocomplete-item';
       div.textContent = val;
-      div.addEventListener('mousedown', e => {
-        e.preventDefault();
-        inp.value = val;
-        list.classList.remove('open');
-      });
+      div.addEventListener('mousedown', e => { e.preventDefault(); inp.value = val; list.classList.remove('open'); });
       list.appendChild(div);
     });
     list.classList.add('open');
@@ -190,6 +206,7 @@ setupAC('inp-curso',   'list-curso',   q => cursos.filter(c=>c.toLowerCase().inc
 setupAC('inp-alumno',  'list-alumno',  q => alumnos.filter(a=>a.toLowerCase().includes(q)));
 setupAC('inp-docente', 'list-docente', q => docentes.filter(d=>d.toLowerCase().includes(q)));
 
+// ── GUARDAR ──
 async function guardar() {
   const curso   = document.getElementById('inp-curso').value.trim();
   const alumno  = document.getElementById('inp-alumno').value.trim();
@@ -203,7 +220,7 @@ async function guardar() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Guardando…';
   try {
-    const json = await apiGet({ accion:'registrarNormal', curso, alumno, docente, novedad });
+    const json = await apiCall({ accion:'registrarNormal', curso, alumno, docente, novedad });
     if (json.ok) {
       toast("Novedad guardada correctamente","success");
       ['inp-curso','inp-alumno','inp-docente','inp-novedad'].forEach(id => document.getElementById(id).value='');
@@ -213,16 +230,16 @@ async function guardar() {
   btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg> Guardar novedad';
 }
 
+// ── NOVEDADES ──
 async function cargarNovedades() {
   document.getElementById('tbody').innerHTML = '<tr><td colspan="5"><div class="empty-state">Cargando…</div></td></tr>';
   try {
-    const json = await apiGet({ accion: 'getNovedadesNormales' });
+    const json = await apiCall({ accion: 'getNovedadesNormales' });
     if (json.ok) { novedadesData = json.data.reverse(); renderTabla(novedadesData); }
   } catch(e) {
     document.getElementById('tbody').innerHTML = '<tr><td colspan="5"><div class="empty-state">Error al cargar</div></td></tr>';
   }
 }
-
 function renderTabla(datos) {
   const tbody = document.getElementById('tbody');
   if (!datos.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty-state">No hay novedades</div></td></tr>'; return; }
@@ -235,18 +252,12 @@ function renderTabla(datos) {
       <td style="white-space:pre-wrap;max-width:240px">${r.novedadNormal}</td>
     </tr>`).join('');
 }
-
 function filtrarTabla() {
-  const fa = document.getElementById('fil-alumno').value.toLowerCase();
-  const fc = document.getElementById('fil-curso').value.toLowerCase();
-  const fd = document.getElementById('fil-docente').value.toLowerCase();
-  renderTabla(novedadesData.filter(r =>
-    r.alumno.toLowerCase().includes(fa) &&
-    r.curso.toLowerCase().includes(fc) &&
-    r.docente.toLowerCase().includes(fd)
-  ));
+  const fa=document.getElementById('fil-alumno').value.toLowerCase();
+  const fc=document.getElementById('fil-curso').value.toLowerCase();
+  const fd=document.getElementById('fil-docente').value.toLowerCase();
+  renderTabla(novedadesData.filter(r=>r.alumno.toLowerCase().includes(fa)&&r.curso.toLowerCase().includes(fc)&&r.docente.toLowerCase().includes(fd)));
 }
-
 function toast(msg,tipo){
   const el=document.getElementById('toast');
   el.textContent=msg; el.className=tipo||'';
