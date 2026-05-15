@@ -164,8 +164,10 @@ async function cargarDatos() {
   try {
     const rC = await apiCall({ accion: 'getCursos' });
     if (rC.ok) cursos = rC.data;
+    await new Promise(r => setTimeout(r, 300));
     const rA = await apiCall({ accion: 'getAlumnos' });
     if (rA.ok) alumnos = rA.data;
+    await new Promise(r => setTimeout(r, 300));
     const rD = await apiCall({ accion: 'getDocentes' });
     if (rD.ok) docentes = rD.data;
   } catch(e) {
