@@ -55,7 +55,7 @@
   .pill-sens{background:var(--sens-bg);color:var(--sens-text);border:1px solid var(--sens-border)}
   .empty-state{text-align:center;padding:48px 0;color:var(--muted);font-size:14px}
   .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-  .filters input{flex:1;min-width:130px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:var(--radius);outline:none;background:#fafaf9}
+  .filters input{flex:1;min-width:120px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:var(--radius);outline:none;background:#fafaf9}
   .filters input:focus{border-color:var(--accent);background:#fff}
   .toggle-sens{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sens-text);font-weight:500;cursor:pointer;user-select:none;white-space:nowrap}
   .toggle-sens input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
@@ -126,10 +126,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Fecha y hora</th><th>Curso</th><th>Alumno</th><th>Docente</th>
-              <th>Novedad normal</th><th class="th-sens">🔒 Sensible</th>
-            </tr>
+            <tr><th>Fecha y hora</th><th>Curso</th><th>Alumno</th><th>Docente</th><th>Novedad normal</th><th class="th-sens">🔒 Sensible</th></tr>
           </thead>
           <tbody id="tbody"></tbody>
         </table>
@@ -139,10 +136,27 @@
 </main>
 <div id="toast"></div>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySGlruWI8QCgx7-z8UkC6JuHMpoBbyGRyG0G46Wb0uwyszWGf5Dz8dxnqTj9-MZOqtpQ/exec?accion=getAlumnos";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXJ6tjT9S2bcmmunkWqU2dPsNTH9f_RWgIKZittMOt2upLIkr7FBtzRqC_t0MyAfImUg/exec?accion=getAlumnos&callback=test";
 
 let cursos = [], alumnos = [], docentes = [], novedadesData = [];
+let cbCount = 0;
 
+// ── JSONP ──
+function apiCall(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = '__cb' + (++cbCount);
+    const timeout = setTimeout(() => { delete window[cbName]; reject(new Error('Timeout')); }, 10000);
+    window[cbName] = function(data) { clearTimeout(timeout); delete window[cbName]; resolve(data); };
+    const url = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: cbName}).toString();
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error('Error de red')); };
+    document.head.appendChild(script);
+    setTimeout(() => { if (script.parentNode) script.parentNode.removeChild(script); }, 11000);
+  });
+}
+
+// ── TABS ──
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -154,18 +168,13 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-async function apiGet(params) {
-  const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
-  const res = await fetch(url, { redirect: 'follow' });
-  return res.json();
-}
-
+// ── CARGA INICIAL ──
 async function cargarDatos() {
   try {
     const [rC, rA, rD] = await Promise.all([
-      apiGet({ accion: 'getCursos' }),
-      apiGet({ accion: 'getAlumnos' }),
-      apiGet({ accion: 'getDocentes' })
+      apiCall({ accion: 'getCursos' }),
+      apiCall({ accion: 'getAlumnos' }),
+      apiCall({ accion: 'getDocentes' })
     ]);
     if (rC.ok) cursos   = rC.data;
     if (rA.ok) alumnos  = rA.data;
@@ -176,6 +185,7 @@ async function cargarDatos() {
 }
 cargarDatos();
 
+// ── AUTOCOMPLETE ──
 function setupAC(inputId, listId, getItems) {
   const inp = document.getElementById(inputId);
   const list = document.getElementById(listId);
@@ -190,11 +200,7 @@ function setupAC(inputId, listId, getItems) {
       const div = document.createElement('div');
       div.className = 'autocomplete-item';
       div.textContent = val;
-      div.addEventListener('mousedown', e => {
-        e.preventDefault();
-        inp.value = val;
-        list.classList.remove('open');
-      });
+      div.addEventListener('mousedown', e => { e.preventDefault(); inp.value = val; list.classList.remove('open'); });
       list.appendChild(div);
     });
     list.classList.add('open');
@@ -214,6 +220,7 @@ setupAC('inp-curso',   'list-curso',   q => cursos.filter(c=>c.toLowerCase().inc
 setupAC('inp-alumno',  'list-alumno',  q => alumnos.filter(a=>a.toLowerCase().includes(q)));
 setupAC('inp-docente', 'list-docente', q => docentes.filter(d=>d.toLowerCase().includes(q)));
 
+// ── GUARDAR ──
 async function guardar() {
   const curso    = document.getElementById('inp-curso').value.trim();
   const alumno   = document.getElementById('inp-alumno').value.trim();
@@ -228,7 +235,7 @@ async function guardar() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Guardando…';
   try {
-    const json = await apiGet({ accion:'registrarDirectivo', curso, alumno, docente, novedad, sensible });
+    const json = await apiCall({ accion:'registrarDirectivo', curso, alumno, docente, novedad, sensible });
     if (json.ok) {
       toast("Novedad guardada correctamente","success");
       ['inp-curso','inp-alumno','inp-docente','inp-novedad','inp-sensible'].forEach(id => document.getElementById(id).value='');
@@ -238,48 +245,39 @@ async function guardar() {
   btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg> Guardar novedad';
 }
 
+// ── NOVEDADES ──
 async function cargarNovedades() {
   document.getElementById('tbody').innerHTML = '<tr><td colspan="6"><div class="empty-state">Cargando…</div></td></tr>';
   try {
-    const json = await apiGet({ accion: 'getNovedadesDirectivo' });
+    const json = await apiCall({ accion: 'getNovedadesDirectivo' });
     if (json.ok) { novedadesData = json.data.reverse(); renderTabla(novedadesData); }
   } catch(e) {
     document.getElementById('tbody').innerHTML = '<tr><td colspan="6"><div class="empty-state">Error al cargar</div></td></tr>';
   }
 }
-
 function renderTabla(datos) {
   const tbody = document.getElementById('tbody');
   const mostrarS = document.getElementById('chk-sens').checked;
-  if (!datos.length) {
-    tbody.innerHTML=`<tr><td colspan="${mostrarS?6:5}"><div class="empty-state">No hay novedades</div></td></tr>`;
-    return;
-  }
+  if (!datos.length) { tbody.innerHTML=`<tr><td colspan="${mostrarS?6:5}"><div class="empty-state">No hay novedades</div></td></tr>`; return; }
   tbody.innerHTML = datos.map(r=>`
     <tr>
       <td><span style="font-family:'DM Mono',monospace;font-size:12px">${r.fechaHora}</span></td>
       <td><span class="pill">${r.curso}</span></td>
       <td>${r.alumno}</td>
       <td>${r.docente}</td>
-      <td style="white-space:pre-wrap;max-width:180px">${r.novedadNormal||''}</td>
-      <td class="td-sens" style="white-space:pre-wrap;max-width:180px;display:${mostrarS?'':'none'}">
+      <td style="white-space:pre-wrap;max-width:160px">${r.novedadNormal||''}</td>
+      <td class="td-sens" style="white-space:pre-wrap;max-width:160px;display:${mostrarS?'':'none'}">
         ${r.novedadSensible?'<span class="pill pill-sens">🔒</span> '+r.novedadSensible:'<span style="color:#ccc">—</span>'}
       </td>
     </tr>`).join('');
   document.querySelector('.th-sens').style.display = mostrarS ? '' : 'none';
 }
-
 function filtrarTabla() {
-  const fa = document.getElementById('fil-alumno').value.toLowerCase();
-  const fc = document.getElementById('fil-curso').value.toLowerCase();
-  const fd = document.getElementById('fil-docente').value.toLowerCase();
-  renderTabla(novedadesData.filter(r =>
-    r.alumno.toLowerCase().includes(fa) &&
-    r.curso.toLowerCase().includes(fc) &&
-    r.docente.toLowerCase().includes(fd)
-  ));
+  const fa=document.getElementById('fil-alumno').value.toLowerCase();
+  const fc=document.getElementById('fil-curso').value.toLowerCase();
+  const fd=document.getElementById('fil-docente').value.toLowerCase();
+  renderTabla(novedadesData.filter(r=>r.alumno.toLowerCase().includes(fa)&&r.curso.toLowerCase().includes(fc)&&r.docente.toLowerCase().includes(fd)));
 }
-
 function toast(msg,tipo){
   const el=document.getElementById('toast');
   el.textContent=msg; el.className=tipo||'';
