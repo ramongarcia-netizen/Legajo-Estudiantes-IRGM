@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novedades — Directivos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f3ef; --surface:#fff; --border:#e2ddd6;
+    --accent:#7c3aed; --accent-h:#6d28d9;
+    --text:#1c1917; --muted:#78716c;
+    --danger:#dc2626; --success:#15803d;
+    --sens-bg:#fdf4ff; --sens-border:#e9d5ff; --sens-text:#6d28d9;
+    --tag-bg:#f3f0ff; --tag-text:#6d28d9;
+    --radius:10px; --shadow:0 2px 12px rgba(0,0,0,0.07);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+  .logo{font-size:15px;font-weight:600}.logo span{color:var(--accent)}
+  .badge{font-size:11px;font-weight:700;background:var(--tag-bg);color:var(--tag-text);padding:3px 10px;border-radius:20px;text-transform:uppercase}
+  .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px}
+  .tab{padding:14px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none}
+  .tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{max-width:800px;margin:0 auto;padding:28px 16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+  .card h2{font-size:16px;font-weight:600;margin-bottom:22px}
+  .sens-section{background:var(--sens-bg);border:1px solid var(--sens-border);border-radius:var(--radius);padding:18px 20px}
+  .sens-label{font-size:11px;font-weight:700;color:var(--sens-text);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+  .form-row{margin-bottom:18px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+  .input-wrap{position:relative}
+  input[type="text"],textarea{width:100%;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:var(--radius);background:#fafaf9;color:var(--text);outline:none;transition:border .2s,box-shadow .2s}
+  input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.1);background:#fff}
+  .sens-section input[type="text"],.sens-section textarea{background:#fff;border-color:var(--sens-border)}
+  textarea{resize:vertical;min-height:90px;line-height:1.6}
+  .autocomplete-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;z-index:200;display:none}
+  .autocomplete-list.open{display:block}
+  .autocomplete-item{padding:10px 14px;font-size:14px;cursor:pointer;transition:background .15s}
+  .autocomplete-item:hover,.autocomplete-item.highlighted{background:var(--tag-bg)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;border:none;border-radius:var(--radius);cursor:pointer;transition:background .2s}
+  .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-h)}
+  .btn-primary:disabled{background:#c4b5fd;cursor:not-allowed}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.success{background:var(--success)}#toast.error{background:var(--danger)}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  th.th-sens{background:var(--sens-bg);color:var(--sens-text)}
+  td{padding:11px 12px;border-bottom:1px solid #f5f0ea;vertical-align:top}
+  tr:last-child td{border-bottom:none}tr:hover td{background:#faf7f5}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--tag-bg);color:var(--tag-text)}
+  .pill-sens{background:var(--sens-bg);color:var(--sens-text);border:1px solid var(--sens-border)}
+  .empty-state{text-align:center;padding:48px 0;color:var(--muted);font-size:14px}
+  .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .filters input{flex:1;min-width:130px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:var(--radius);outline:none;background:#fafaf9}
+  .filters input:focus{border-color:var(--accent);background:#fff}
+  .toggle-sens{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sens-text);font-weight:500;cursor:pointer;user-select:none;white-space:nowrap}
+  .toggle-sens input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .section-hidden{display:none}
+  .td-sens{background:#fdf9ff}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Novedades <span>Escolares</span></div>
+  <div class="badge">🔒 Directivo</div>
+</header>
+<div class="tabs">
+  <div class="tab active" data-tab="registro">✏️ Registrar novedad</div>
+  <div class="tab" data-tab="consulta">🔍 Consultar novedades</div>
+</div>
+<main>
+  <div id="tab-registro">
+    <div class="card">
+      <h2>Nueva novedad</h2>
+      <div class="form-row"><label>Curso</label>
+        <div class="input-wrap">
+          <input type="text" id="inp-curso" placeholder="Escribí para buscar…" autocomplete="off">
+          <div class="autocomplete-list" id="list-curso"></div>
+        </div>
+      </div>
+      <div class="form-row"><label>Alumno</label>
+        <div class="input-wrap">
+          <input type="text" id="inp-alumno" placeholder="Escribí para buscar…" autocomplete="off">
+          <div class="autocomplete-list" id="list-alumno"></div>
+        </div>
+      </div>
+      <div class="form-row"><label>Docente</label>
+        <div class="input-wrap">
+          <input type="text" id="inp-docente" placeholder="Escribí para buscar…" autocomplete="off">
+          <div class="autocomplete-list" id="list-docente"></div>
+        </div>
+      </div>
+      <div class="form-row"><label>Novedad normal</label>
+        <textarea id="inp-novedad" placeholder="Describí la novedad general…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="sens-section">
+          <div class="sens-label">🔒 Novedad sensible — solo visible para directivos</div>
+          <textarea id="inp-sensible" placeholder="Información confidencial…"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-guardar" onclick="guardar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+        Guardar novedad
+      </button>
+    </div>
+  </div>
+  <div id="tab-consulta" class="section-hidden">
+    <div class="card">
+      <h2>Novedades registradas</h2>
+      <div class="filters">
+        <input type="text" id="fil-alumno"  placeholder="Alumno…"  oninput="filtrarTabla()">
+        <input type="text" id="fil-curso"   placeholder="Curso…"   oninput="filtrarTabla()">
+        <input type="text" id="fil-docente" placeholder="Docente…" oninput="filtrarTabla()">
+        <label class="toggle-sens">
+          <input type="checkbox" id="chk-sens" checked onchange="filtrarTabla()">
+          Mostrar sensibles
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha y hora</th><th>Curso</th><th>Alumno</th><th>Docente</th>
+              <th>Novedad normal</th><th class="th-sens">🔒 Sensible</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1unSgxoms8M4zPpE2YtfGPBSiq-pL4OyZpkKWjM56RhG8fvrhScF0CZ8lHsYvN1mXPA/exec";
+
+let cursos = [], alumnos = [], docentes = [], novedadesData = [];
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    document.getElementById('tab-registro').classList.toggle('section-hidden', id !== 'registro');
+    document.getElementById('tab-consulta').classList.toggle('section-hidden', id !== 'consulta');
+    if (id === 'consulta') cargarNovedades();
+  });
+});
+
+async function apiGet(params) {
+  const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url, { redirect: 'follow' });
+  return res.json();
+}
+
+async function cargarDatos() {
+  try {
+    const [rC, rA, rD] = await Promise.all([
+      apiGet({ accion: 'getCursos' }),
+      apiGet({ accion: 'getAlumnos' }),
+      apiGet({ accion: 'getDocentes' })
+    ]);
+    if (rC.ok) cursos   = rC.data;
+    if (rA.ok) alumnos  = rA.data;
+    if (rD.ok) docentes = rD.data;
+  } catch(e) {
+    toast("No se pudo conectar con la base de datos","error");
+  }
+}
+cargarDatos();
+
+function setupAC(inputId, listId, getItems) {
+  const inp = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  let idx = -1;
+  inp.addEventListener('input', () => {
+    const q = inp.value.trim().toLowerCase();
+    list.innerHTML = ''; idx = -1;
+    if (!q) { list.classList.remove('open'); return; }
+    const matches = getItems(q).slice(0, 10);
+    if (!matches.length) { list.classList.remove('open'); return; }
+    matches.forEach(val => {
+      const div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.textContent = val;
+      div.addEventListener('mousedown', e => {
+        e.preventDefault();
+        inp.value = val;
+        list.classList.remove('open');
+      });
+      list.appendChild(div);
+    });
+    list.classList.add('open');
+  });
+  inp.addEventListener('keydown', e => {
+    const items = list.querySelectorAll('.autocomplete-item');
+    if (e.key==='ArrowDown'){idx=Math.min(idx+1,items.length-1);hl(items,idx);e.preventDefault();}
+    if (e.key==='ArrowUp'){idx=Math.max(idx-1,0);hl(items,idx);e.preventDefault();}
+    if (e.key==='Enter'&&idx>=0){inp.value=items[idx].textContent;list.classList.remove('open');}
+    if (e.key==='Escape') list.classList.remove('open');
+  });
+  document.addEventListener('click', e => { if (!inp.contains(e.target)) list.classList.remove('open'); });
+}
+function hl(items,i){items.forEach((el,j)=>el.classList.toggle('highlighted',j===i));}
+
+setupAC('inp-curso',   'list-curso',   q => cursos.filter(c=>c.toLowerCase().includes(q)));
+setupAC('inp-alumno',  'list-alumno',  q => alumnos.filter(a=>a.toLowerCase().includes(q)));
+setupAC('inp-docente', 'list-docente', q => docentes.filter(d=>d.toLowerCase().includes(q)));
+
+async function guardar() {
+  const curso    = document.getElementById('inp-curso').value.trim();
+  const alumno   = document.getElementById('inp-alumno').value.trim();
+  const docente  = document.getElementById('inp-docente').value.trim();
+  const novedad  = document.getElementById('inp-novedad').value.trim();
+  const sensible = document.getElementById('inp-sensible').value.trim();
+  if (!curso)   return toast("Completá el campo Curso","error");
+  if (!alumno)  return toast("Completá el campo Alumno","error");
+  if (!docente) return toast("Completá el campo Docente","error");
+  if (!novedad && !sensible) return toast("Completá al menos un campo de novedad","error");
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando…';
+  try {
+    const json = await apiGet({ accion:'registrarDirectivo', curso, alumno, docente, novedad, sensible });
+    if (json.ok) {
+      toast("Novedad guardada correctamente","success");
+      ['inp-curso','inp-alumno','inp-docente','inp-novedad','inp-sensible'].forEach(id => document.getElementById(id).value='');
+    } else toast("Error al guardar","error");
+  } catch(e) { toast("Error de conexión","error"); }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg> Guardar novedad';
+}
+
+async function cargarNovedades() {
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="6"><div class="empty-state">Cargando…</div></td></tr>';
+  try {
+    const json = await apiGet({ accion: 'getNovedadesDirectivo' });
+    if (json.ok) { novedadesData = json.data.reverse(); renderTabla(novedadesData); }
+  } catch(e) {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="6"><div class="empty-state">Error al cargar</div></td></tr>';
+  }
+}
+
+function renderTabla(datos) {
+  const tbody = document.getElementById('tbody');
+  const mostrarS = document.getElementById('chk-sens').checked;
+  if (!datos.length) {
+    tbody.innerHTML=`<tr><td colspan="${mostrarS?6:5}"><div class="empty-state">No hay novedades</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = datos.map(r=>`
+    <tr>
+      <td><span style="font-family:'DM Mono',monospace;font-size:12px">${r.fechaHora}</span></td>
+      <td><span class="pill">${r.curso}</span></td>
+      <td>${r.alumno}</td>
+      <td>${r.docente}</td>
+      <td style="white-space:pre-wrap;max-width:180px">${r.novedadNormal||''}</td>
+      <td class="td-sens" style="white-space:pre-wrap;max-width:180px;display:${mostrarS?'':'none'}">
+        ${r.novedadSensible?'<span class="pill pill-sens">🔒</span> '+r.novedadSensible:'<span style="color:#ccc">—</span>'}
+      </td>
+    </tr>`).join('');
+  document.querySelector('.th-sens').style.display = mostrarS ? '' : 'none';
+}
+
+function filtrarTabla() {
+  const fa = document.getElementById('fil-alumno').value.toLowerCase();
+  const fc = document.getElementById('fil-curso').value.toLowerCase();
+  const fd = document.getElementById('fil-docente').value.toLowerCase();
+  renderTabla(novedadesData.filter(r =>
+    r.alumno.toLowerCase().includes(fa) &&
+    r.curso.toLowerCase().includes(fc) &&
+    r.docente.toLowerCase().includes(fd)
+  ));
+}
+
+function toast(msg,tipo){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=tipo||'';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>
