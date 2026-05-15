@@ -157,13 +157,11 @@ document.querySelectorAll('.tab').forEach(tab => {
 // ── CARGA INICIAL ──
 async function cargarDatos() {
   try {
-    const [rC, rA, rD] = await Promise.all([
-      apiCall({ accion: 'getCursos' }),
-      apiCall({ accion: 'getAlumnos' }),
-      apiCall({ accion: 'getDocentes' })
-    ]);
-    if (rC.ok) cursos   = rC.data;
-    if (rA.ok) alumnos  = rA.data;
+    const rC = await apiCall({ accion: 'getCursos' });
+    if (rC.ok) cursos = rC.data;
+    const rA = await apiCall({ accion: 'getAlumnos' });
+    if (rA.ok) alumnos = rA.data;
+    const rD = await apiCall({ accion: 'getDocentes' });
     if (rD.ok) docentes = rD.data;
   } catch(e) {
     toast("No se pudo conectar con la base de datos", "error");
