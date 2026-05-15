@@ -123,22 +123,27 @@ let cbCount = 0;
 // ── JSONP ──
 function apiCall(params) {
   return new Promise((resolve, reject) => {
-    const cbName = '__cb' + (++cbCount);
+    const cbName = 'cb' + Date.now();
     const timeout = setTimeout(() => {
       delete window[cbName];
       reject(new Error('Timeout'));
-    }, 10000);
+    }, 15000);
     window[cbName] = function(data) {
       clearTimeout(timeout);
       delete window[cbName];
       resolve(data);
     };
-    const url = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: cbName}).toString();
+    const p = new URLSearchParams();
+    for (const k in params) p.append(k, params[k]);
+    p.append('callback', cbName);
     const script = document.createElement('script');
-    script.src = url;
-    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error('Error de red')); };
+    script.src = SCRIPT_URL + '?' + p.toString();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      reject(new Error('Error de red'));
+    };
     document.head.appendChild(script);
-    setTimeout(() => { if (script.parentNode) script.parentNode.removeChild(script); }, 11000);
   });
 }
 
